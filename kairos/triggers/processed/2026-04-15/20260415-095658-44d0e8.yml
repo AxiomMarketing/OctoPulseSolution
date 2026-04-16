@@ -1,0 +1,15 @@
+agent: atlas
+created_at: '2026-04-15T09:56:58.015189+00:00'
+id: 20260415-095658-44d0e8
+priority: normal
+prompt: CLI smoke test
+submitter: kairos-ctl
+
+
+---
+# KAIROS processing meta
+processed_at: '2026-04-15T10:02:48.168411+00:00'
+result_summary: '**ATLAS — CLI Smoke Test — 2026-04-15**  ---  ### ✅ RÉSULTATS  |
+  Composant | Statut | Détail | |---|---|---| | **Workspace** | ✅ OK | `team-workspace/`,
+  `kairos'
+success: true

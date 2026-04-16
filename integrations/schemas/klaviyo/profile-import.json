@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "klaviyo/profile-import",
+  "title": "Klaviyo Profile Import (Upsert) Request",
+  "description": "Request body for POST /profile-import",
+  "type": "object",
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "required": ["type", "attributes"],
+      "properties": {
+        "type": { "type": "string", "const": "profile" },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "email":        { "type": "string", "format": "email" },
+            "phone_number": { "type": "string", "pattern": "^\\+[1-9]\\d{1,14}$" },
+            "first_name":   { "type": "string" },
+            "last_name":    { "type": "string" },
+            "organization": { "type": "string" },
+            "title":        { "type": "string" },
+            "location": {
+              "type": "object",
+              "properties": {
+                "address1":  { "type": "string" },
+                "city":      { "type": "string" },
+                "region":    { "type": "string" },
+                "country":   { "type": "string" },
+                "zip":       { "type": "string" }
+              }
+            },
+            "properties": {
+              "type": "object",
+              "description": "Custom properties (arbitrary key-value)"
+            }
+          }
+        }
+      }
+    }
+  }
+}

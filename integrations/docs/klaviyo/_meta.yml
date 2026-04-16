@@ -1,0 +1,9 @@
+fetch_date: "2026-04-15"
+api_version: "revision: 2024-10-15"
+source_urls:
+  - "https://developers.klaviyo.com/en/reference/api_overview"
+  - "https://developers.klaviyo.com/en/reference/get_flows"
+  - "https://developers.klaviyo.com/en/reference/get_metrics"
+  - "https://developers.klaviyo.com/en/reference/get_profiles"
+  - "https://developers.klaviyo.com/en/reference/create_event"
+notes: "Docs written from Klaviyo developer documentation knowledge (cutoff Aug 2025). Always include 'revision: 2024-10-15' header. Verify latest revision at: https://developers.klaviyo.com/en/docs/api_versioning_and_deprecation_policy"

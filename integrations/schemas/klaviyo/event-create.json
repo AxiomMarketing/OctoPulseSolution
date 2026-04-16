@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "klaviyo/event-create",
+  "title": "Klaviyo Create Event Request",
+  "description": "Request body for POST /events (JSON:API format)",
+  "type": "object",
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "type": "object",
+      "required": ["type", "attributes"],
+      "properties": {
+        "type": { "type": "string", "const": "event" },
+        "attributes": {
+          "type": "object",
+          "required": ["profile", "metric"],
+          "properties": {
+            "profile": {
+              "type": "object",
+              "required": ["data"],
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "required": ["type", "attributes"],
+                  "properties": {
+                    "type": { "type": "string", "const": "profile" },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "email":        { "type": "string", "format": "email" },
+                        "phone_number": { "type": "string" },
+                        "first_name":   { "type": "string" },
+                        "last_name":    { "type": "string" },
+                        "properties":   { "type": "object" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "metric": {
+              "type": "object",
+              "required": ["data"],
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "required": ["type", "attributes"],
+                  "properties": {
+                    "type": { "type": "string", "const": "metric" },
+                    "attributes": {
+                      "type": "object",
+                      "required": ["name"],
+                      "properties": {
+                        "name": { "type": "string", "minLength": 1 }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "properties":  { "type": "object", "description": "Event-specific data" },
+            "time":        { "type": "string", "format": "date-time" },
+            "unique_id":   { "type": "string", "description": "Deduplication key" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,205 @@
+kairos:
+  # How often the main tick loop runs (seconds)
+  tick_interval_sec: 60
+  # Directory for daemon log files
+  log_dir: ~/logs/kairos
+  # File touched each tick for external health monitoring
+  heartbeat_path: ~/octopulse/kairos/heartbeat
+  # Telegram chat ID for operator notifications (Marty DM)
+  telegram_chat_id: "7234705861"
+  # Maximum claude -p processes running concurrently
+  max_concurrent_claude: 3
+
+claude:
+  # Path (or name if on $PATH) to the claude CLI binary
+  binary: claude
+  # Flags always passed to claude -p
+  flags: ["--dangerously-skip-permissions"]
+  # Working directory for all claude subprocess calls
+  working_dir: ~/octopulse
+  # Kill subprocess after this many seconds
+  timeout_sec: 900
+  # Number of retry attempts on non-zero exit
+  retry_count: 1
+  # Seconds to wait between retries
+  retry_backoff_sec: 30
+
+jobs:
+  - id: atlas-daily
+    agent: atlas
+    cron: "45 7 * * *"
+    prompt: "/atlas:daily-report"
+    priority: high
+    notify_on: [failure, critical_alert, completion]
+    enabled: true
+
+  - id: atlas-weekly
+    agent: atlas
+    cron: "0 7 * * 1"
+    prompt: "/atlas:weekly-report"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: atlas-monthly
+    agent: atlas
+    cron: "0 7 1 * *"
+    prompt: "/atlas:monthly-report"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: sparky-daily
+    agent: sparky
+    cron: "15 8 * * *"
+    prompt: "/sparky:brief-quotidien"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: sparky-weekly
+    agent: sparky
+    cron: "0 8 * * 1"
+    prompt: "/sparky:consolidation"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: sparky-monthly
+    agent: sparky
+    cron: "0 8 1 * *"
+    prompt: "/sparky:bilan-mensuel"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: stratege-weekly
+    agent: stratege
+    cron: "0 9 * * 1"
+    prompt: "/stratege:plan-hebdo"
+    priority: high
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: radar-daily
+    agent: radar
+    cron: "0 8 * * *"
+    prompt: "/radar:scan-rapide"
+    priority: normal
+    notify_on: [failure]
+    enabled: true
+
+  - id: radar-weekly
+    agent: radar
+    cron: "0 8 * * 1"
+    prompt: "/radar:analyse-hebdo"
+    priority: normal
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: radar-monthly
+    agent: radar
+    cron: "0 8 1 * *"
+    prompt: "/radar:synthese-mensuelle"
+    priority: normal
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: radar-calendar-weekly
+    agent: radar-calendar
+    cron: "30 8 * * 1"
+    prompt: "/radar:calendrier-alertes"
+    priority: normal
+    notify_on: [failure]
+    enabled: true
+
+  - id: sentinel-weekly
+    agent: sentinel
+    cron: "30 9 * * 1"
+    prompt: "/sentinel:weekly-report"
+    priority: critical
+    notify_on: [completion, failure, critical_findings]
+    enabled: true
+
+  - id: sentinel-monthly
+    agent: sentinel
+    cron: "0 10 1 * *"
+    prompt: "/sentinel:monthly-report"
+    priority: critical
+    notify_on: [completion, failure, critical_findings]
+    enabled: true
+
+  - id: keeper-daily
+    agent: keeper
+    cron: "30 7 * * *"
+    prompt: "/keeper:daily-check"
+    priority: normal
+    notify_on: [failure]
+    enabled: true
+
+  - id: funnel-weekly
+    agent: funnel
+    cron: "0 10 * * 1"
+    prompt: "/funnel:weekly-acquisition-report"
+    priority: normal
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: nexus-weekly
+    agent: nexus
+    cron: "30 10 * * 1"
+    prompt: "/nexus:weekly-cro-report"
+    priority: normal
+    notify_on: [completion, failure]
+    enabled: true
+
+  - id: maeva-weekly
+    agent: maeva
+    cron: "0 11 * * 1"
+    prompt: "/maeva:weekly-editorial-plan"
+    priority: normal
+    notify_on: [completion, failure]
+    enabled: true
+
+
+  - id: mcp-scan-weekly
+    agent: null
+    cron: "0 11 * * 1"
+    prompt: "Lance mcp-scan audit via Bash : uvx mcp-scan@latest scan ~/.claude.json --json > ~/logs/mcp-scan/audit-$(date -I).json puis résume les findings dans /octopulse/team-workspace/marketing/reports/kairos/$(date -I)/mcp-scan-summary.md. Alert Telegram si CRITICAL detecté."
+    priority: normal
+    notify_on: [failure, critical_alert]
+    enabled: true
+
+  - id: api-versions-check
+    agent: null
+    cron: "0 9 * * 1"
+    prompt: "Audit hebdo des versions d'API externes utilisées par OctoPulse. Pour chaque service, compare la version utilisée dans le code/config vs la dernière stable publique :\n1. Shopify Admin API : curl https://shopify.dev/docs/api/admin-rest → version YYYY-MM la plus récente. Grep ~/octopulse -rE 'admin/api/[0-9]{4}-[0-9]{2}' pour trouver les usages.\n2. Meta Graph API : vérifier graph.facebook.com/vXX.X courante sur developers.facebook.com/docs/graph-api/changelog. Grep 'graph.facebook.com/v'.\n3. Klaviyo API : header 'revision: YYYY-MM-DD' → dernière stable sur developers.klaviyo.com. Grep 'revision.*20[0-9]{2}'.\n4. Pinterest API : api.pinterest.com/v5 → vérifier s'il y a v6. Grep 'api.pinterest.com/v'.\n5. Anthropic : anthropic-version header → dernière sur docs.anthropic.com.\n\nProduis un rapport ~/octopulse/team-workspace/marketing/reports/kairos/$(date -I)/api-versions-audit.md avec tableau Service | Version utilisée | Dernière stable | Statut (✅/⚠️/🚨). Alert Telegram si une version est dépréciée officiellement."
+    priority: normal
+    notify_on: [completion, failure, critical_alert]
+    enabled: true
+
+calendar:
+  # Path to the marketing calendar markdown file
+  source: ~/octopulse/team-workspace/marketing/references/calendrier-evenements.md
+  lead_times:
+    - days: 45
+      agents: [stratege]
+      prompt_template: "Événement {name} dans 45j ({date}, catégorie {category}). Planifie via /stratege:plan-hebdo."
+    - days: 30
+      agents: [forge, maeva]
+      prompt_template: "Événement {name} dans 30j. Brief créatif + calendrier éditorial."
+    - days: 14
+      agents: [keeper]
+      prompt_template: "Événement {name} dans 14j. Prépare la séquence email Klaviyo."
+
+reactive:
+  # Directory watched for incoming trigger JSON files
+  inbox_dir: ~/octopulse/kairos/triggers/inbox
+  # Successfully processed triggers are moved here
+  processed_dir: ~/octopulse/kairos/triggers/processed
+  # Malformed or rejected triggers are moved here
+  invalid_dir: ~/octopulse/kairos/triggers/invalid
+  # How often to poll inbox_dir (seconds)
+  poll_interval_sec: 5
+  # Maximum triggers to process per tick
+  max_per_tick: 10

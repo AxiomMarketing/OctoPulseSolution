@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "printful/order-create",
+  "title": "Printful Create Order Request",
+  "description": "Request body for POST /orders",
+  "type": "object",
+  "required": ["recipient", "items"],
+  "properties": {
+    "recipient": {
+      "type": "object",
+      "required": ["name", "address1", "city", "country_code"],
+      "properties": {
+        "name":         { "type": "string", "minLength": 1 },
+        "company":      { "type": "string" },
+        "address1":     { "type": "string", "minLength": 1 },
+        "address2":     { "type": "string" },
+        "city":         { "type": "string", "minLength": 1 },
+        "state_code":   { "type": "string" },
+        "country_code": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "zip":          { "type": "string" },
+        "phone":        { "type": "string" },
+        "email":        { "type": "string", "format": "email" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["quantity"],
+        "properties": {
+          "sync_variant_id": { "type": "integer" },
+          "variant_id":      { "type": "integer" },
+          "external_variant_id": { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "retail_price": { "type": "string", "pattern": "^\\d+\\.\\d{2}$" },
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "retail_costs": {
+      "type": "object",
+      "properties": {
+        "currency":  { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "subtotal":  { "type": "string" },
+        "discount":  { "type": "string" },
+        "shipping":  { "type": "string" },
+        "tax":       { "type": "string" },
+        "total":     { "type": "string" }
+      }
+    },
+    "confirm": { "type": "boolean", "default": false },
+    "update_existing": { "type": "boolean", "default": false },
+    "external_id": { "type": "string" },
+    "shipping": { "type": "string", "description": "Shipping method ID from /shipping/rates" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shopify-products-request",
+  "title": "Shopify GET /products.json — Request Parameters",
+  "description": "Valid query parameters for Shopify Admin REST API GET /products.json (2026-04)",
+  "type": "object",
+  "properties": {
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 250,
+      "default": 50,
+      "description": "Maximum number of products to return"
+    },
+    "since_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Return only products with ID greater than this value"
+    },
+    "title": {
+      "type": "string",
+      "description": "Filter by product title (exact match)"
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Filter by product vendor"
+    },
+    "handle": {
+      "type": "string",
+      "description": "Filter by URL handle"
+    },
+    "product_type": {
+      "type": "string",
+      "description": "Filter by product type"
+    },
+    "collection_id": {
+      "type": "integer",
+      "description": "Filter to a specific collection"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "archived", "draft"],
+      "description": "Filter by product status"
+    },
+    "published_status": {
+      "type": "string",
+      "enum": ["published", "unpublished", "any"],
+      "default": "any",
+      "description": "Filter by published status"
+    },
+    "ids": {
+      "type": "string",
+      "pattern": "^[0-9]+(,[0-9]+)*$",
+      "description": "Comma-separated list of product IDs to retrieve"
+    },
+    "fields": {
+      "type": "string",
+      "description": "Comma-separated list of fields to include in response",
+      "examples": [
+        "id,title,status",
+        "id,title,status,variants,images",
+        "id,title,vendor,product_type,status,variants"
+      ]
+    },
+    "page_info": {
+      "type": "string",
+      "description": "Cursor for pagination (from Link header of previous response)"
+    },
+    "created_at_min": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products created after this date (ISO8601)"
+    },
+    "created_at_max": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products created before this date (ISO8601)"
+    },
+    "updated_at_min": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products updated after this date (ISO8601)"
+    },
+    "updated_at_max": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products updated before this date (ISO8601)"
+    },
+    "published_at_min": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products published after this date (ISO8601)"
+    },
+    "published_at_max": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Return products published before this date (ISO8601)"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "limit": 50,
+      "status": "active",
+      "fields": "id,title,status,variants"
+    },
+    {
+      "limit": 250,
+      "since_id": 7000000000000,
+      "status": "active"
+    },
+    {
+      "ids": "7891234567890,7891234567891",
+      "fields": "id,title,variants"
+    }
+  ]
+}

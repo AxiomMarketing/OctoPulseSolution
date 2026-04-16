@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Meta Ads Ads Request",
+  "description": "Parameters for GET /act_{id}/ads or /{adset_id}/ads",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "string",
+      "description": "Comma-separated list of ad fields; use {subfields} for nested objects",
+      "examples": ["id,name,adset_id,campaign_id,status,effective_status,creative{id,title,body,image_url,call_to_action},created_time"],
+      "pattern": "^[a-z_,{}]+$"
+    },
+    "adset_id": {
+      "type": "string",
+      "description": "Filter ads by parent ad set ID",
+      "pattern": "^[0-9]+$"
+    },
+    "effective_status": {
+      "type": "array",
+      "description": "Filter ads by their actual delivery status",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "PAUSED",
+          "DELETED",
+          "ARCHIVED",
+          "DISAPPROVED",
+          "PENDING_REVIEW",
+          "PENDING_BILLING_INFO",
+          "WITH_ISSUES"
+        ]
+      },
+      "minItems": 1
+    },
+    "filtering": {
+      "type": "array",
+      "description": "Additional filter conditions for ads",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Ad field to filter on",
+            "examples": ["adset_id", "effective_status", "campaign_id"]
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["EQUAL", "NOT_EQUAL", "GREATER_THAN", "LESS_THAN", "IN", "NOT_IN", "CONTAIN", "NOT_CONTAIN"]
+          },
+          "value": {
+            "description": "Filter value; type depends on field"
+          }
+        },
+        "required": ["field", "operator", "value"],
+        "additionalProperties": false
+      }
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5000,
+      "default": 25,
+      "description": "Number of ads to return per page"
+    },
+    "after": {
+      "type": "string",
+      "description": "Pagination cursor for the next page"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "fields": "id,name,adset_id,campaign_id,status,effective_status,creative{id,title,body,image_url,call_to_action}",
+      "effective_status": ["ACTIVE", "PAUSED"],
+      "limit": 50
+    }
+  ]
+}

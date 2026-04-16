@@ -1,0 +1,8 @@
+fetch_date: "2026-04-15"
+api_version: "v1/v2 (mixed — v2 for some endpoints)"
+source_urls:
+  - "https://developers.printful.com/docs/"
+  - "https://api.printful.com/openapi.json"
+  - "https://developers.printful.com/docs/#tag/Orders-API"
+  - "https://developers.printful.com/docs/#tag/Mockup-Generator-API"
+notes: "Docs written from Printful developer documentation and OpenAPI spec knowledge (cutoff Aug 2025). Verify with live spec: curl -sI https://api.printful.com/openapi.json"

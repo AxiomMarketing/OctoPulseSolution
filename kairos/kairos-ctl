@@ -1,0 +1,149 @@
+#!/home/octopulse/octopulse/kairos/venv/bin/python3
+"""kairos-ctl — KAIROS CLI for status, job management, triggers."""
+import argparse, json, os, signal, subprocess, sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+KAIROS_DIR = Path(__file__).parent.resolve()
+CONFIG = KAIROS_DIR / "config.yml"
+LOG_DIR = Path(os.path.expanduser("~/logs/kairos"))
+HEARTBEAT = KAIROS_DIR / "heartbeat"
+
+sys.path.insert(0, str(KAIROS_DIR))
+
+def _age_sec(path: Path) -> int | None:
+    if not path.exists(): return None
+    try:
+        return int((datetime.now(timezone.utc) - datetime.fromisoformat(path.read_text().strip())).total_seconds())
+    except Exception:
+        return None
+
+def cmd_status(args):
+    print(f"Config:    {CONFIG}")
+    age = _age_sec(HEARTBEAT)
+    if age is None:
+        print(f"Heartbeat: MISSING (daemon not running?)")
+    else:
+        status = "alive" if age < 180 else f"stale ({age}s)"
+        print(f"Heartbeat: {HEARTBEAT.read_text().strip()} ({status})")
+    # systemd status
+    try:
+        r = subprocess.run(["systemctl", "--user", "is-active", "kairos.service"],
+                           capture_output=True, text=True, timeout=5)
+        print(f"systemd:   {r.stdout.strip() or '(unknown)'}")
+    except Exception as e:
+        print(f"systemd:   (error: {e})")
+    # Scheduler status
+    from scheduler import Scheduler
+    s = Scheduler(str(CONFIG))
+    st = s.status()
+    print(f"Jobs:      {st['jobs_total']} total / {st['enabled']} enabled")
+    # Next 5 runs
+    upcoming = sorted(
+        [j for j in st["jobs"] if j["enabled"] and j["next_run"]],
+        key=lambda j: j["next_run"])[:5]
+    print("\nNext 5 runs:")
+    for j in upcoming:
+        print(f"  {j['next_run']}  {j['id']:<28}  cron={j['cron']}")
+
+def cmd_list(args):
+    from scheduler import Scheduler
+    s = Scheduler(str(CONFIG))
+    st = s.status()
+    jobs = [j for j in st["jobs"] if not args.enabled_only or j["enabled"]]
+    if not jobs:
+        print("No jobs.")
+        return
+    widths = {"id": 30, "cron": 18, "next": 27}
+    print(f"{'ID':<{widths['id']}} {'CRON':<{widths['cron']}} {'NEXT_RUN':<{widths['next']}} EN  RUNS  FAILS")
+    for j in jobs:
+        en = "✓" if j["enabled"] else "✗"
+        next_run = j["next_run"] or "-"
+        print(f"{j['id']:<{widths['id']}} {j['cron']:<{widths['cron']}} {next_run:<{widths['next']}} {en}   {j['run_count']:<4}  {j['fail_count']}")
+
+def cmd_enable(args):
+    from scheduler import Scheduler
+    s = Scheduler(str(CONFIG))
+    if not s.mark_enabled(args.job_id, True):
+        print(f"Unknown job: {args.job_id}"); sys.exit(1)
+    print(f"✓ enabled: {args.job_id}")
+
+def cmd_disable(args):
+    from scheduler import Scheduler
+    s = Scheduler(str(CONFIG))
+    if not s.mark_enabled(args.job_id, False):
+        print(f"Unknown job: {args.job_id}"); sys.exit(1)
+    print(f"✓ disabled: {args.job_id}")
+
+def cmd_logs(args):
+    log = LOG_DIR / "daemon.jsonl"
+    if not log.exists():
+        print(f"No log: {log}")
+        return
+    n = args.n
+    lines = log.read_text().splitlines()
+    if args.job:
+        lines = [l for l in lines if f'"{args.job}"' in l]
+    for line in lines[-n:]:
+        try:
+            d = json.loads(line)
+            ts = d.pop("ts", "")
+            event = d.pop("event", "")
+            rest = " ".join(f"{k}={v}" for k, v in d.items())
+            print(f"{ts}  {event:<14}  {rest}")
+        except Exception:
+            print(line)
+
+def cmd_trigger(args):
+    from reactive import load_watcher_from_config
+    w = load_watcher_from_config(str(CONFIG))
+    path = w.drop_trigger(agent=args.agent, prompt=args.prompt,
+                           priority=args.priority, submitter="kairos-ctl")
+    print(f"✓ dropped: {path}")
+
+def cmd_reload(args):
+    # Find daemon PID by reading pidfile OR using pgrep
+    r = subprocess.run(["pgrep", "-f", "kairos/kairos.py"], capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        print("Daemon not running.")
+        sys.exit(1)
+    pid = int(r.stdout.splitlines()[0])
+    # We don't implement SIGHUP reload in daemon (would require rewrite); advise systemd restart
+    print(f"Daemon PID {pid}. For config reload: systemctl --user restart kairos.service")
+
+def cmd_dry_run(args):
+    """Run a single job's prompt via claude_runner in dry-run logging only."""
+    from scheduler import Scheduler
+    s = Scheduler(str(CONFIG))
+    if args.job_id not in s.jobs:
+        print(f"Unknown job: {args.job_id}"); sys.exit(1)
+    job = s.jobs[args.job_id]
+    print(f"[dry-run] Would execute: {job.id}")
+    print(f"  agent:  {job.agent}")
+    print(f"  prompt: {job.prompt}")
+    print(f"  cron:   {job.cron}")
+
+def main():
+    p = argparse.ArgumentParser(prog="kairos-ctl", description="KAIROS CLI")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("status", help="uptime, heartbeat, next runs").set_defaults(func=cmd_status)
+
+    lp = sub.add_parser("list", help="list jobs"); lp.add_argument("--enabled-only", action="store_true"); lp.set_defaults(func=cmd_list)
+
+    ep = sub.add_parser("enable"); ep.add_argument("job_id"); ep.set_defaults(func=cmd_enable)
+    dp = sub.add_parser("disable"); dp.add_argument("job_id"); dp.set_defaults(func=cmd_disable)
+
+    lg = sub.add_parser("logs"); lg.add_argument("-n", type=int, default=50); lg.add_argument("--job", default=None); lg.set_defaults(func=cmd_logs)
+
+    tp = sub.add_parser("trigger"); tp.add_argument("agent"); tp.add_argument("prompt"); tp.add_argument("--priority", default="normal"); tp.set_defaults(func=cmd_trigger)
+
+    sub.add_parser("reload", help="advice for reload").set_defaults(func=cmd_reload)
+
+    drp = sub.add_parser("dry-run"); drp.add_argument("job_id"); drp.set_defaults(func=cmd_dry_run)
+
+    args = p.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()

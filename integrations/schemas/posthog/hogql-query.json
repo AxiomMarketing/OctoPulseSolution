@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "posthog/hogql-query",
+  "title": "PostHog HogQL Query Request",
+  "description": "Request body for POST /api/projects/{project_id}/query",
+  "type": "object",
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["HogQLQuery", "TrendsQuery", "FunnelsQuery", "RetentionQuery"]
+        },
+        "query": {
+          "type": "string",
+          "description": "HogQL SQL query string (for HogQLQuery kind)"
+        },
+        "series": {
+          "type": "array",
+          "description": "Event series for Trends/Funnels queries",
+          "items": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind":  { "type": "string", "enum": ["EventsNode", "ActionsNode"] },
+              "event": { "type": "string" },
+              "name":  { "type": "string" },
+              "math":  { "type": "string", "enum": ["total", "dau", "weekly_active", "unique_session", "sum", "min", "max", "avg", "median"] }
+            }
+          }
+        },
+        "dateRange": {
+          "type": "object",
+          "properties": {
+            "date_from": { "type": "string", "description": "e.g. '-30d', '-7d', '2024-01-01'" },
+            "date_to":   { "type": "string", "description": "e.g. 'today', '2024-12-31'" }
+          }
+        },
+        "interval": {
+          "type": "string",
+          "enum": ["hour", "day", "week", "month"]
+        },
+        "breakdownFilter": {
+          "type": "object",
+          "properties": {
+            "breakdown":      { "type": "string" },
+            "breakdown_type": { "type": "string", "enum": ["event", "person", "session", "group"] }
+          }
+        }
+      }
+    },
+    "refresh": {
+      "type": "boolean",
+      "default": false,
+      "description": "Force cache refresh"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+agent: atlas
+created_at: '2026-04-15T10:21:32.220876+00:00'
+id: 20260415-102132-b63326
+priority: debug
+prompt: ping test F8 inflight round-trip
+submitter: kairos-ctl
+
+
+---
+# KAIROS processing meta
+processed_at: '2026-04-15T10:21:52.459562+00:00'
+result_summary: '**PONG** ✅  Atlas opérationnel — round-trip F8 confirmé.  - Instance
+  : VPS OctoPulse - Agent : ATLAS (Meta Ads Performance) - Session : active - Mémoire
+  : initi'
+success: true

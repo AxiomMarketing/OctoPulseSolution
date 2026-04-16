@@ -1,0 +1,52 @@
+version: 1
+apis:
+  meta-ads:
+    display_name: Meta Marketing API
+    docs_base_url: https://developers.facebook.com/docs/marketing-api/
+    docs_reference_url: https://developers.facebook.com/docs/marketing-api/reference/
+    openapi_spec: null
+    bw_item: meta-long-token
+    auth_header: 'Authorization: Bearer {{TOKEN}}'
+    base_api_url: https://graph.facebook.com/v21.0
+    rate_limits:
+      per_hour: 150
+      per_day: 2000
+    fetch_schedule: nightly
+  shopify:
+    display_name: Shopify Admin API
+    docs_base_url: https://shopify.dev/docs/api/admin
+    mcp_available: shopify-ai-toolkit
+    bw_item: shopify-access-token
+    auth_header: 'X-Shopify-Access-Token: {{TOKEN}}'
+    base_api_url: https://{{STORE}}.myshopify.com/admin/api/2026-04
+    rate_limits:
+      per_minute: 30
+    fetch_schedule: skip_use_mcp
+  printful:
+    display_name: Printful API
+    docs_base_url: https://developers.printful.com/docs/
+    openapi_spec: https://api.printful.com/openapi.json
+    bw_item: Printful
+    auth_header: 'Authorization: Bearer {{TOKEN}}'
+    base_api_url: https://api.printful.com
+    rate_limits:
+      per_hour: 100
+    fetch_schedule: nightly
+  klaviyo:
+    display_name: Klaviyo API
+    docs_base_url: https://developers.klaviyo.com/en/reference/
+    bw_item: klaviyo-api-key
+    auth_header: 'Authorization: Klaviyo-API-Key {{TOKEN}}'
+    base_api_url: https://a.klaviyo.com/api
+    rate_limits:
+      per_minute: 75
+    fetch_schedule: nightly
+  posthog:
+    display_name: PostHog API
+    docs_base_url: https://posthog.com/docs/api
+    bw_item: posthog-api-key
+    auth_header: 'Authorization: Bearer {{TOKEN}}'
+    base_api_url: https://app.posthog.com/api
+    rate_limits:
+      per_hour: 500
+    fetch_schedule: nightly

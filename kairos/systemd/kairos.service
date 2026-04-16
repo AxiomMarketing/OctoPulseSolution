@@ -1,0 +1,33 @@
+[Unit]
+Description=KAIROS — OctoPulse autonomous tick loop
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/octopulse/octopulse/kairos
+ExecStart=/home/octopulse/octopulse/kairos/venv/bin/python3 /home/octopulse/octopulse/kairos/kairos.py --config /home/octopulse/octopulse/kairos/config.yml
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PATH=/home/octopulse/.bun/bin:/home/octopulse/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/octopulse
+
+# Resource guards
+MemoryMax=2G
+TasksMax=256
+
+# Hardening (user-mode systemd compatible subset)
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=no
+ReadWritePaths=/home/octopulse/octopulse /home/octopulse/logs /home/octopulse/.claude
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictRealtime=yes
+UMask=0077
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,25 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Memoire et donnees locales
+.claude/agent-memory/
+.claude/memory/
+.claude/security/baselines/
+workspace/
+logs/
+
+# Runtime
+node_modules/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Syncthing
+.stfolder
+.stversions

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Meta Ads Insights Request",
+  "description": "Parameters for GET /act_{id}/insights",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "string",
+      "description": "Comma-separated list of fields",
+      "pattern": "^[a-z_,{}]+$",
+      "examples": ["spend,impressions,actions,ctr,cpm,purchase_roas"]
+    },
+    "date_preset": {
+      "type": "string",
+      "enum": [
+        "today",
+        "yesterday",
+        "this_month",
+        "last_month",
+        "this_quarter",
+        "maximum",
+        "last_3d",
+        "last_7d",
+        "last_14d",
+        "last_28d",
+        "last_30d",
+        "last_90d",
+        "last_week_mon_sun",
+        "last_week_sun_sat",
+        "last_quarter",
+        "last_year",
+        "this_week_mon_today",
+        "this_week_sun_today",
+        "this_year"
+      ]
+    },
+    "time_range": {
+      "type": "object",
+      "description": "Custom date range (mutually exclusive with date_preset)",
+      "properties": {
+        "since": {"type": "string", "format": "date"},
+        "until": {"type": "string", "format": "date"}
+      },
+      "required": ["since", "until"],
+      "additionalProperties": false
+    },
+    "level": {
+      "type": "string",
+      "enum": ["ad", "adset", "campaign", "account"],
+      "default": "account"
+    },
+    "breakdowns": {
+      "type": "string",
+      "description": "Comma-separated breakdown dimensions: age, gender, country, region, impression_device, publisher_platform, platform_position"
+    },
+    "filtering": {
+      "type": "array",
+      "description": "Array of filter conditions applied to results",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Field name to filter on"
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["EQUAL", "NOT_EQUAL", "GREATER_THAN", "LESS_THAN", "IN", "NOT_IN", "CONTAIN", "NOT_CONTAIN"]
+          },
+          "value": {
+            "description": "Filter value; type depends on field and operator"
+          }
+        },
+        "required": ["field", "operator", "value"],
+        "additionalProperties": false
+      }
+    },
+    "sort": {
+      "type": "string",
+      "description": "Sort field with direction suffix: {field}_ascending or {field}_descending",
+      "examples": ["spend_descending", "impressions_descending", "ctr_ascending"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5000,
+      "default": 25
+    },
+    "time_increment": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Split results into N-day windows (1=daily, 7=weekly)"
+    },
+    "action_attribution_windows": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["1d_click", "7d_click", "28d_click", "1d_view", "7d_view", "28d_view"]
+      },
+      "description": "Attribution windows to include in action counts"
+    },
+    "use_account_attribution_setting": {
+      "type": "boolean",
+      "description": "Use the ad account's configured attribution window setting"
+    }
+  },
+  "additionalProperties": false
+}

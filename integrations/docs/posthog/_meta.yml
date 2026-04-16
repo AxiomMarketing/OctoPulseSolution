@@ -1,0 +1,9 @@
+fetch_date: "2026-04-15"
+api_version: "v1 (stable)"
+source_urls:
+  - "https://posthog.com/docs/api"
+  - "https://posthog.com/docs/api/events"
+  - "https://posthog.com/docs/api/persons"
+  - "https://posthog.com/docs/api/query"
+  - "https://posthog.com/docs/api/feature-flags"
+notes: "Docs written from PostHog developer documentation knowledge (cutoff Aug 2025). Check Bitwarden item 'posthog-api-key' notes for project_id and correct base URL (EU vs US cloud vs self-hosted)."

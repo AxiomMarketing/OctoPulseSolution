@@ -1,0 +1,66 @@
+kairos:
+  # How often the main tick loop runs (seconds)
+  tick_interval_sec: 60
+  # Directory for daemon log files
+  log_dir: ~/logs/kairos
+  # File touched each tick for external health monitoring
+  heartbeat_path: ~/octopulse/kairos/heartbeat
+  # Telegram chat ID for operator notifications (Marty DM)
+  telegram_chat_id: "7234705861"
+  # Maximum claude -p processes running concurrently
+  max_concurrent_claude: 3
+
+claude:
+  # Path (or name if on $PATH) to the claude CLI binary
+  binary: claude
+  # Flags always passed to claude -p
+  flags: ["--dangerously-skip-permissions"]
+  # Working directory for all claude subprocess calls
+  working_dir: ~/octopulse
+  # Kill subprocess after this many seconds
+  timeout_sec: 900
+  # Number of retry attempts on non-zero exit
+  retry_count: 1
+  # Seconds to wait between retries
+  retry_backoff_sec: 30
+
+jobs:
+  # Example only — real production jobs configured in T10
+  - id: example-daily
+    # Agent slug (matches ~/octopulse/.claude/agents/<agent>.md)
+    agent: atlas
+    # Standard cron expression (minute hour dom month dow)
+    cron: "45 7 * * *"
+    # Prompt passed to claude -p
+    prompt: "/atlas:daily-report"
+    # Job priority: normal | high | critical
+    priority: normal
+    # Telegram notification triggers: failure | success | critical_alert
+    notify_on: [failure, critical_alert]
+    enabled: true
+
+calendar:
+  # Path to the marketing calendar markdown file
+  source: ~/octopulse/team-workspace/marketing/references/calendrier-evenements.md
+  lead_times:
+    - days: 45
+      agents: [stratege]
+      prompt_template: "Événement {name} dans 45j ({date}, catégorie {category}). Planifie via /stratege:plan-hebdo."
+    - days: 30
+      agents: [forge, maeva]
+      prompt_template: "Événement {name} dans 30j. Brief créatif + calendrier éditorial."
+    - days: 14
+      agents: [keeper]
+      prompt_template: "Événement {name} dans 14j. Prépare la séquence email Klaviyo."
+
+reactive:
+  # Directory watched for incoming trigger JSON files
+  inbox_dir: ~/octopulse/kairos/triggers/inbox
+  # Successfully processed triggers are moved here
+  processed_dir: ~/octopulse/kairos/triggers/processed
+  # Malformed or rejected triggers are moved here
+  invalid_dir: ~/octopulse/kairos/triggers/invalid
+  # How often to poll inbox_dir (seconds)
+  poll_interval_sec: 5
+  # Maximum triggers to process per tick
+  max_per_tick: 10

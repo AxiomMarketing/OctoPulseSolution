@@ -1,0 +1,127 @@
+#!/home/octopulse/octopulse/kairos/venv/bin/python3
+"""integrations-ctl — monitoring CLI for OctoPulse API integrations."""
+import argparse, json, os, subprocess, sys
+from pathlib import Path
+from datetime import datetime, timezone
+import yaml
+
+INTEGRATIONS = Path(os.path.expanduser("~/octopulse/integrations"))
+REGISTRY = INTEGRATIONS / "registry.yml"
+LOG_DIR = Path(os.path.expanduser("~/logs/integrations"))
+
+def cmd_status(args):
+    reg = yaml.safe_load(REGISTRY.read_text())
+    apis = reg.get("apis", {})
+    print(f"APIs registered: {len(apis)}")
+    print()
+    for name, cfg in apis.items():
+        doc_dir = INTEGRATIONS / "docs" / name
+        doc_count = len(list(doc_dir.glob("*.md"))) if doc_dir.exists() else 0
+        schema_dir = INTEGRATIONS / "schemas" / name
+        schema_count = len(list(schema_dir.glob("*.json"))) if schema_dir.exists() else 0
+        recipe_dir = INTEGRATIONS / "recipes" / name
+        recipe_count = len(list(recipe_dir.glob("*.sh"))) if recipe_dir.exists() else 0
+        meta = doc_dir / "_meta.yml"
+        last_fetch = "never"
+        if meta.exists():
+            try:
+                m = yaml.safe_load(meta.read_text())
+                last_fetch = m.get("fetch_date", "unknown")
+            except: pass
+        # ClawMem collection check
+        try:
+            r = subprocess.run(["clawmem", "doctor"], capture_output=True, text=True, timeout=10,
+                             env={**os.environ, "PATH": f"{Path.home()}/.bun/bin:{os.environ.get('PATH','')}"})
+            has_collection = f"docs-{name}" in r.stdout
+        except: has_collection = False
+
+        status = "✓" if doc_count > 0 and has_collection else "⚠"
+        print(f"  {status} {name:<15} docs={doc_count} schemas={schema_count} recipes={recipe_count} clawmem={'✓' if has_collection else '✗'} last_fetch={last_fetch}")
+
+    # Rate limit state
+    rl_file = INTEGRATIONS / "rate-limit-state.json"
+    if rl_file.exists():
+        rl = json.loads(rl_file.read_text())
+        active = sum(1 for calls in rl.values() if calls)
+        print(f"\nRate-limit: {active} active agent+api pairs tracked")
+
+    # Nightly timer
+    try:
+        r = subprocess.run(["systemctl", "--user", "is-active", "docs-refresh.timer"],
+                         capture_output=True, text=True, timeout=5)
+        print(f"Nightly timer: {r.stdout.strip()}")
+    except: print("Nightly timer: unknown")
+
+def cmd_list(args):
+    reg = yaml.safe_load(REGISTRY.read_text())
+    apis = reg.get("apis", {})
+    print(f"{'NAME':<15} {'DISPLAY':<25} {'BW_ITEM':<25} {'RATE':<12} {'FETCH':<10}")
+    for name, cfg in apis.items():
+        rl = cfg.get("rate_limits", {})
+        rate = f"{rl.get('per_hour', rl.get('per_minute','?'))}/{'h' if 'per_hour' in rl else 'm'}" if rl else "-"
+        print(f"{name:<15} {cfg.get('display_name',''):<25} {cfg.get('bw_item','?'):<25} {rate:<12} {cfg.get('fetch_schedule','?'):<10}")
+
+def cmd_logs(args):
+    log_file = LOG_DIR / f"{args.api}.jsonl"
+    if not log_file.exists():
+        print(f"No logs for {args.api} at {log_file}")
+        return
+    lines = log_file.read_text().splitlines()
+    for line in lines[-args.n:]:
+        try:
+            d = json.loads(line)
+            print(f"{d.get('ts','')}  {d.get('method','?')} {d.get('endpoint','?')}  status={d.get('status','')}  {d.get('latency_ms','')}ms")
+        except: print(line)
+
+def cmd_test(args):
+    api = args.api
+    print(f"Testing {api}...")
+    env = {**os.environ, "PATH": f"{Path.home()}/.bun/bin:{os.environ.get('PATH','')}"}
+
+    # 1. Check docs exist
+    doc_dir = INTEGRATIONS / "docs" / api
+    docs = list(doc_dir.glob("*.md")) if doc_dir.exists() else []
+    print(f"  Docs: {len(docs)} files {'✓' if docs else '✗'}")
+
+    # 2. ClawMem vsearch
+    try:
+        r = subprocess.run(["clawmem", "vsearch", "-c", f"docs-{api}", "list endpoints", "-n", "1"],
+                         capture_output=True, text=True, timeout=30, env=env)
+        has_result = bool(r.stdout.strip())
+        print(f"  vsearch: {'✓' if has_result else '✗'} {'(results found)' if has_result else '(empty)'}")
+    except Exception as e:
+        print(f"  vsearch: ✗ ({e})")
+
+    # 3. Schema check
+    schemas = list((INTEGRATIONS / "schemas" / api).glob("*.json")) if (INTEGRATIONS / "schemas" / api).exists() else []
+    print(f"  Schemas: {len(schemas)} files")
+
+    # 4. Recipes
+    recipes = list((INTEGRATIONS / "recipes" / api).glob("*.sh")) if (INTEGRATIONS / "recipes" / api).exists() else []
+    print(f"  Recipes: {len(recipes)} files")
+
+    # 5. bw-get test
+    reg = yaml.safe_load(REGISTRY.read_text())
+    bw_item = reg.get("apis", {}).get(api, {}).get("bw_item", "?")
+    print(f"  BW item: {bw_item}")
+
+def cmd_diff(args):
+    changelog = INTEGRATIONS / "docs" / "CHANGELOG.md"
+    if not changelog.exists():
+        print("No CHANGELOG.md — no changes detected yet (run nightly first)")
+        return
+    print(changelog.read_text()[-2000:])  # last 2000 chars
+
+def main():
+    p = argparse.ArgumentParser(prog="integrations-ctl")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("status", help="Overview of all APIs").set_defaults(func=cmd_status)
+    sub.add_parser("list", help="List registered APIs").set_defaults(func=cmd_list)
+    lp = sub.add_parser("logs"); lp.add_argument("api"); lp.add_argument("-n", type=int, default=20); lp.set_defaults(func=cmd_logs)
+    tp = sub.add_parser("test"); tp.add_argument("api"); tp.set_defaults(func=cmd_test)
+    dp = sub.add_parser("diff"); dp.set_defaults(func=cmd_diff)
+    args = p.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()

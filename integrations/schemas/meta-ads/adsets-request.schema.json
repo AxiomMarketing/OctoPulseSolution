@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Meta Ads Ad Sets Request",
+  "description": "Parameters for GET /act_{id}/adsets or /{campaign_id}/adsets",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "string",
+      "description": "Comma-separated list of ad set fields to return",
+      "examples": ["id,name,campaign_id,status,effective_status,daily_budget,lifetime_budget,bid_strategy,optimization_goal,targeting,start_time,end_time,created_time"],
+      "pattern": "^[a-z_,]+$"
+    },
+    "campaign_id": {
+      "type": "string",
+      "description": "Filter ad sets by parent campaign ID",
+      "pattern": "^[0-9]+$"
+    },
+    "effective_status": {
+      "type": "array",
+      "description": "Filter ad sets by their actual delivery status",
+      "items": {
+        "type": "string",
+        "enum": ["ACTIVE", "PAUSED", "DELETED", "ARCHIVED", "IN_PROCESS", "WITH_ISSUES"]
+      },
+      "minItems": 1
+    },
+    "filtering": {
+      "type": "array",
+      "description": "Additional filter conditions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Ad set field to filter on",
+            "examples": ["campaign_id", "effective_status", "daily_budget"]
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["EQUAL", "NOT_EQUAL", "GREATER_THAN", "LESS_THAN", "IN", "NOT_IN", "CONTAIN", "NOT_CONTAIN"]
+          },
+          "value": {
+            "description": "Filter value"
+          }
+        },
+        "required": ["field", "operator", "value"],
+        "additionalProperties": false
+      }
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5000,
+      "default": 25,
+      "description": "Number of ad sets to return per page"
+    },
+    "after": {
+      "type": "string",
+      "description": "Pagination cursor for the next page"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "fields": "id,name,campaign_id,status,effective_status,daily_budget,bid_strategy,optimization_goal,start_time,end_time",
+      "effective_status": ["ACTIVE"],
+      "limit": 100
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+agent: atlas
+created_at: '2026-04-15T10:04:10.020453+00:00'
+id: 20260415-100410-c41210
+priority: debug
+prompt: KAIROS smoke test ping
+submitter: kairos-ctl
+
+
+---
+# KAIROS processing meta
+processed_at: '2026-04-15T10:04:33.249023+00:00'
+result_summary: '**KAIROS smoke test — PASS ✅**  ---  | Indicateur | Statut | |---|---|
+  | **Service systemd** | `active (running)` depuis 14:02:12 | | **Heartbeat** | `2026-04-1'
+success: true
